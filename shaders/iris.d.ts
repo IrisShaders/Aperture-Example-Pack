@@ -530,6 +530,24 @@ declare class Vector3f {
     z(newValue : number) : void;
 }
 
+declare class Vector3d {
+    /**
+     * Initializes to 0.
+     */
+    constructor();
+
+    constructor(x : number, y: number, z: number);
+    constructor(other : Vector3d);
+
+    x() : number;
+    y() : number;
+    z() : number;
+
+    x(newValue : number) : void;
+    y(newValue : number) : void;
+    z(newValue : number) : void;
+}
+
 declare class Vector4f {
     /**
      * Initializes to (0, 0, 0, 1).
@@ -641,6 +659,11 @@ declare class WorldState {
      * Returns the camera position. This will always be a new copy.
      */
     cameraPos() : Vector3f;
+
+    /**
+     * Returns the current fluid the camera is submerged in.
+     */
+    currentFluid() : number;
 
     /**
      * Return the last frame time (ap.time.delta).

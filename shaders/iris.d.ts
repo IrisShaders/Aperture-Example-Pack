@@ -245,6 +245,7 @@ declare function setLightColor(
  * @alpha
  */
 declare function setLightColor(name: NamespacedId, hex: number): void;
+declare function setBiomeInfo(name: NamespacedId, hex: number): void;
 
 // Uniforms
 
@@ -302,6 +303,18 @@ declare class Cubemap {
     build(): BuiltTexture;
 }
 
+declare class ExportList {
+  addBool(name : string, value : boolean) : ExportList;
+  addInt(name : string, value : number) : ExportList;
+  addFloat(name : string, value : number) : ExportList;
+
+  build() : BuiltExportList;
+}
+
+declare interface BuiltExportList {
+
+}
+
 declare class PipelineConfig {
     forStage(stage : ProgramStage) : CommandList;
 
@@ -326,6 +339,10 @@ declare class PipelineConfig {
     createCubemapTexture(name : string) : Cubemap;
     createImageCubemapTexture(sampler : string, image : string) : Cubemap;
 
+    setGlobalExport(list : BuiltExportList) : void;
+
+    createExportList() : ExportList;
+
     /**
      * Creates a reference to a texture that can change.
      * @param sampler The sampler name
@@ -341,8 +358,8 @@ declare class PipelineConfig {
 
     importRawTexture(name : string, location : string) : RawTexture;
 
-    createBuffer(size : number, clear : boolean) : BuiltBuffer;
-    createStreamingBuffer(size : number) : BuiltStreamingBuffer;
+    createBuffer(name : string, size : number, clear : boolean) : BuiltBuffer;
+    createStreamingBuffer(name : string, size : number) : BuiltStreamingBuffer;
 }
 
 declare class StateReference {
@@ -383,8 +400,11 @@ declare interface BuiltCommandList {}
 interface Shader<T, X> {
     ssbo(index: number, buf: BuiltBuffer | undefined): T;
     ubo(index: number, buf: BuiltBuffer | undefined): T;
-    define(key: string, value: string): T;
 
+  exportBool(name : string, value : boolean) : T;
+  exportInt(name : string, value : number) : T;
+  exportFloat(name : string, value : number) : T;
+  exportList(list : BuiltExportList) : T;
     compile(): X;
 }
 
@@ -395,11 +415,13 @@ interface PostShader<T> extends Shader<T, PostPass> {
 declare class ObjectShader implements Shader<ObjectShader, BuiltObjectShader> {
   private constructor(name: string, usage: ProgramUsage);
 
-  vertex(loc: string): ObjectShader;
-  geometry(loc: string): ObjectShader;
-  control(loc: string): ObjectShader;
-  eval(loc: string): ObjectShader;
-  fragment(loc: string): ObjectShader;
+  location(loc: string): ObjectShader;
+
+  vertex(entrypoint: string): ObjectShader;
+  geometry(entrypoint: string): ObjectShader;
+  control(entrypoint: string): ObjectShader;
+  eval(entrypoint: string): ObjectShader;
+  fragment(entrypoint: string): ObjectShader;
 
   blendFunc(
         index: number,
@@ -414,7 +436,11 @@ declare class ObjectShader implements Shader<ObjectShader, BuiltObjectShader> {
   target(index: number, tex: BuiltTexture | undefined): ObjectShader;
   ssbo(index: number, buf: BuiltBuffer | undefined): ObjectShader;
   ubo(index: number, buf: BuiltBuffer | undefined): ObjectShader;
-  define(key: string, value: string): ObjectShader;
+
+  exportBool(name : string, value : boolean) : ObjectShader;
+  exportInt(name : string, value : number) : ObjectShader;
+  exportFloat(name : string, value : number) : ObjectShader;
+  exportList(list : BuiltExportList) : ObjectShader;
 
   compile(): BuiltObjectShader;
 }
@@ -422,11 +448,7 @@ declare class ObjectShader implements Shader<ObjectShader, BuiltObjectShader> {
 interface Command {}
 
 declare class Composite implements PostShader<Composite>, Command {
-  vertex(loc: string): Composite;
-  geometry(loc: string): Composite;
-  control(loc: string): Composite;
-  eval(loc: string): Composite;
-  fragment(loc: string): Composite;
+  location(loc : string, entrypoint : string) : Composite;
 
   state(state: StateReference): Composite;
 
@@ -434,7 +456,11 @@ declare class Composite implements PostShader<Composite>, Command {
   target(index: number, tex: BuiltTexture | undefined, mip: number): Composite;
   ssbo(index: number, buf: BuiltBuffer | undefined): Composite;
   ubo(index: number, buf: BuiltBuffer | undefined): Composite;
-  define(key: string, value: string): Composite;
+
+  exportBool(name : string, value : boolean) : Composite;
+  exportInt(name : string, value : number) : Composite;
+  exportFloat(name : string, value : number) : Composite;
+  exportList(list : BuiltExportList) : Composite;
 
   blendFunc(
     index: number,
@@ -448,12 +474,16 @@ declare class Composite implements PostShader<Composite>, Command {
 }
 
 declare class Compute implements PostShader<Compute>, Command {
-  location(loc: string): Compute;
+  location(loc : string, entrypoint : string) : Compute;
   workGroups(x: number, y: number, z: number): Compute;
   ssbo(index: number, buf: BuiltBuffer | undefined): Compute;
   ubo(index: number, buf: BuiltBuffer | undefined): Compute;
-  define(key: string, value: string): Compute;
   state(state: StateReference): Compute;
+
+  exportBool(name : string, value : boolean) : Compute;
+  exportInt(name : string, value : number) : Compute;
+  exportFloat(name : string, value : number) : Compute;
+  exportList(list : BuiltExportList) : Compute;
 
   compile(): PostPass;
 }
@@ -467,7 +497,12 @@ declare class CombinationPass {
   constructor(location: string);
   ssbo(index: number, buf: BuiltBuffer | undefined): CombinationPass;
   ubo(index: number, buf: BuiltBuffer | undefined): CombinationPass;
-  define(key: string, value: string): CombinationPass;
+
+
+  exportBool(name : string, value : boolean) : CombinationPass;
+  exportInt(name : string, value : number) : CombinationPass;
+  exportFloat(name : string, value : number) : CombinationPass;
+  exportList(list : BuiltExportList) : CombinationPass;
 
   compile(): BuiltCombinationPass;
 }

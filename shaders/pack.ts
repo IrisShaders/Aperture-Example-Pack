@@ -10,7 +10,7 @@ export function configureRenderer(renderer: RendererConfig): void {
 
 // This is where the shaders, buffers, and textures are configured.
 export function configurePipeline(pipeline: PipelineConfig): void {
-    // This creates the main texture; one of the two textures used in this template. It can be accessed via "uniform sampler2D mainTexture;" in shaders.
+    // This creates the main texture; one of the two textures used in this template. It can be accessed via "Sampler2D mainTexture;" in shaders.
     // However, you are not limited by how many textures can be created.
     // The most important limitation is you should never read and write to the same texture in the same shader. (Using images avoids this limitation, but this is not covered here.)
 
@@ -22,28 +22,30 @@ export function configurePipeline(pipeline: PipelineConfig): void {
             .width(screenWidth).height(screenHeight)
             .format(Format.RGBA8).build();
 
+    // First, we need to define object shaders, and their source "modules".
+    // The default entrypoint names are vertexMain and fragmentMain; however, this can be changed with the `vertex` and `fragment` functions.
+
     // A basic object shader. This shader is marked as BASIC, which means all objects will fall back to it.
     pipeline.createObjectShader("basic", Usage.BASIC)
-            .vertex("objects/basic.vsh")
-            .fragment("objects/basic.fsh")
+            .location("objects/basic")
+            .exportBool("disableFog", false)
             .target(0, mainTexture)
             .compile();
 
-    // The following is a copy of the basic shader, but with DISABLE_FOG defined to avoid fog being run on the sky.
-    pipeline.createObjectShader("basic", Usage.SKY_TEXTURES)
-            .vertex("objects/basic.vsh")
-            .fragment("objects/basic.fsh")
+    // The following is a copy of the basic shader, but with disableFog enabled to avoid fog being run on the sky.
+    pipeline.createObjectShader("sky", Usage.SKY_TEXTURES)
+            .location("objects/basic")
             .target(0, mainTexture)
-            .define("DISABLE_FOG", "1")
+            .exportBool("disableFog", true)
             .compile();
 
     // The following is a command list; the main way to do post processing and compute.
     // For this, we will be creating a POST_RENDER command list, which will run after everything.
     let postRender = pipeline.forStage(Stage.POST_RENDER);
 
-    // For composites, you can choose to have a vertex shader or not. If you choose not to, one will be provided with vec2 uv as a default input.
+    // A basic composite. Requires both a module and entrypoint.
     postRender.createComposite("gamma")
-            .fragment("post/gamma.fsh")
+            .location("post/gamma", "applyGamma")
             .target(0, finalTexture)
             .compile();
 
@@ -56,7 +58,7 @@ export function configurePipeline(pipeline: PipelineConfig): void {
     postRender.end();
 
     // The combination pass. For more information, see the file.
-    pipeline.createCombinationPass("post/combination.fsh").compile();
+    pipeline.createCombinationPass("post/combination").compile();
 }
 
 export function beginFrame(state : WorldState) : void {

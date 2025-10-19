@@ -263,28 +263,10 @@ declare function defineGlobally(key: string, value: string | number): void;
 interface BuiltObjectShader {}
 interface PostPass {}
 
-/**
- * For {@link addBarrier}. Indicates all SSBO operations must be visible in the next pass.
- */
-declare var SSBO_BIT: number;
-
-/**
- * For {@link addBarrier}. Indicates all UBO operations must be visible in the next pass.
- */
-declare var UBO_BIT: number;
-
-/**
- * For {@link addBarrier}. Indicates all imageStore operations must be visible in the next pass.
- */
-declare var IMAGE_BIT: number;
-
-/**
- * For {@link addBarrier}. Indicates all texture fetch operations must reflect data set in past passes.
- */
-declare var FETCH_BIT: number;
 
 /**
  * For a memory barrier. Indicates a "texture barrier", a special operation in OpenGL.
+ * Not yet implemented in the Slang branch.
  */
 declare var GL_TEXTURE_BARRIER: number;
 
@@ -383,8 +365,6 @@ declare class CommandList {
 
     createIndirectDraw(name : string, buffer : BuiltGPUBuffer, mode : DrawMode, maxVertices : number) : IndirectDraw;
 
-    barrier(barrier : number, state? : StateReference) : CommandList;
-
     generateMips(...tex : BuiltTexture[]) : CommandList;
 
     copy(src : BuiltTexture, dst : BuiltTexture, width : number, height : number) : CommandList;
@@ -405,6 +385,14 @@ interface Shader<T, X> {
   exportInt(name : string, value : number) : T;
   exportFloat(name : string, value : number) : T;
   exportList(list : BuiltExportList) : T;
+
+  /**
+   * A object override. This replaces any bindings to {@param reference} with {@param target}. For example, Sampler2D TextureOne getting replaced with Sampler2D targetTexture.
+   * @param reference The name to look for.
+   * @param target The object to replace with.
+   */
+    overrideObject(reference:string, target:string): T;
+
     compile(): X;
 }
 
@@ -422,6 +410,7 @@ declare class ObjectShader implements Shader<ObjectShader, BuiltObjectShader> {
   control(entrypoint: string): ObjectShader;
   eval(entrypoint: string): ObjectShader;
   fragment(entrypoint: string): ObjectShader;
+  overrideObject(reference:string, target:string): ObjectShader;
 
   blendFunc(
         index: number,
@@ -462,6 +451,8 @@ declare class Composite implements PostShader<Composite>, Command {
   exportFloat(name : string, value : number) : Composite;
   exportList(list : BuiltExportList) : Composite;
 
+  overrideObject(reference:string, target:string): Composite;
+
   blendFunc(
     index: number,
     srcRGB: BlendModeFunction,
@@ -484,6 +475,7 @@ declare class Compute implements PostShader<Compute>, Command {
   exportInt(name : string, value : number) : Compute;
   exportFloat(name : string, value : number) : Compute;
   exportList(list : BuiltExportList) : Compute;
+  overrideObject(reference:string, target:string): Compute;
 
   compile(): PostPass;
 }
@@ -503,6 +495,7 @@ declare class CombinationPass {
   exportInt(name : string, value : number) : CombinationPass;
   exportFloat(name : string, value : number) : CombinationPass;
   exportList(list : BuiltExportList) : CombinationPass;
+  overrideObject(reference:string, target:string): CombinationPass;
 
   compile(): BuiltCombinationPass;
 }

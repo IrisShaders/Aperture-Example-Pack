@@ -27,13 +27,13 @@ VertexOutput vertexMain(Vertex input) { // If we had any more vertex semantics w
 
     output.position = mul(input.projectionMatrix(), mul(input.viewMatrix(), modelPos));
     output.uv = input.uv();
-    output.color = input.color();
+    output.color = input.color() * input.ao();
     output.light = input.light();
     output.distance = length(modelPos);
 
     // There is... one more thing we should deal with. When an entity gets hit and turns red, this is known as an "overlay color"; and that is a manual job.
     // Overlay color is one of the mentioned Optional semantics; we can check if it exists and apply it if so.
-    
+
     //float4 overlayColor = input.overlayColor().orElse(float4(0.0));
     // orElse is one way to handle an optional, but there is another way. The following allows you to auto-check the existence of an optional.
 
@@ -50,7 +50,7 @@ extern static const bool disableFog; // This is set in the pack.ts when creating
 [[shader("fragment")]]
 float4 fragmentMain(VertexOutput input) : SV_Target0 { // See the comment in gamma.slang about what targets are.
     // Aperture provides some built-in samplers for object shaders.
-    float4 color = defaultSampler.Sample(input.uv) * input.color;
+    float4 color = albedoTex.Sample(input.uv) * input.color;
 
     color.rgb *= lightmap.Sample(input.light).rgb;
 
@@ -60,10 +60,11 @@ float4 fragmentMain(VertexOutput input) : SV_Target0 { // See the comment in gam
     if (!disableFog) {
         float mixValue = (input.distance - ap.world.fogStart) / (ap.world.fogEnd - ap.world.fogStart);
 
-        float renderDistanceFogStart = clamp(ap.world.renderDistance / 10, 4, 64); // Default calculation as of 1.21.10.
-        mixValue = max(mixValue, (input.distance - renderDistanceFogStart) / (ap.world.renderDistance - renderDistanceFogStart));
+        float renderDistance = float(ap.world.renderDistance);
+        float renderDistanceFogStart = clamp(renderDistance * 0.1, 4.0, 64.0); // Default calculation as of 1.21.10.
+        mixValue = max(mixValue, (input.distance - renderDistanceFogStart) / (renderDistance - renderDistanceFogStart));
 
-        color = lerp(color, ap.world.fogColor, clamp(mixValue, 0.0, 1.0));
+        color = lerp(color, ap.world.fogColor, saturate(mixValue));
     }
 
     return color;

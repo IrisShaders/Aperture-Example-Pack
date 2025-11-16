@@ -49,11 +49,6 @@ export function configurePipeline(pipeline: PipelineConfig): void {
             .target(0, finalTexture)
             .compile();
 
-    // If you have multiple passes relying on each other, you will require memory barriers.
-
-    // An example of a memory barrier that will make any SSBO's and images written to in the previous pass available to the next pass.
-    // postRender.barrier(SSBO_BIT | IMAGE_BIT);
-
     // You must end your command list after you are done adding commands to it.
     postRender.end();
 

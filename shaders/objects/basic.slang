@@ -50,7 +50,7 @@ extern static const bool disableFog; // This is set in the pack.ts when creating
 [[shader("fragment")]]
 float4 fragmentMain(VertexOutput input) : SV_Target0 { // See the comment in gamma.slang about what targets are.
     // Aperture provides some built-in samplers for object shaders.
-    float4 color = defaultSampler.Sample(input.uv) * input.color;
+    float4 color = albedoTex.Sample(input.uv) * input.color;
 
     color.rgb *= lightmap.Sample(input.light).rgb;
 
